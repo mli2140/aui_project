@@ -54,7 +54,7 @@ def distance(trigger, echo):
 
     return distance
 
-def async countPerson(actual, dist, index):
+def countPerson(actual, dist, index):
     if(actual < dist):
         if(index == 1):
             global stairs_count
@@ -70,11 +70,11 @@ if __name__ == '__main__':
             actual_elevator = distance(GPIO_TRIGGER, GPIO_ECHO)
             actual_stairs = distance(GPIO_TRIGGER2, GPIO_ECHO2)
             
-            await countPerson(actual_stairs, stairs_dist, 1)
-            #s.start()
+            s = threading.Thread(target=countPerson(actual_stairs, stairs_dist, 1), args=(1,))
+            s.start()
             
-            await countPerson(actual_elevator, elevator_dist, 0)
-            #e.start()
+            e = threading.Thread(target=countPerson(actual_elevator, elevator_dist, 0), args=(1,))
+            e.start()
             
             print(actual_elevator)
             print(actual_stairs)
