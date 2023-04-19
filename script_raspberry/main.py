@@ -2,6 +2,7 @@
 import RPi.GPIO as GPIO
 import threading
 import time
+import asyncio
  
 #GPIO Mode (BOARD / BCM)
 GPIO.setmode(GPIO.BCM)
@@ -54,35 +55,46 @@ def distance(trigger, echo):
 
     return distance
 
-def countPerson(actual, dist, index):
+async def countPerson(actual, dist, index):
     if(actual < dist):
         if(index == 1):
             global stairs_count
             stairs_count += 1
+            file_stairs = open("stairs.txt", "a")
+            file_stairs.write(time.ctime() + ": " + str(stairs_count))
+            time.sleep(2)
         else:
             global elevator_count
             elevator_count += 1
-        time.sleep(2)
- 
-if __name__ == '__main__':
+            file_elevator = open("elevator.txt", "a")
+            file_elevator.write(time.ctime() + ": " + str(elevator_count))
+            time.sleep(2)
+
+async def main():
+
     try:
         while True:
             actual_elevator = distance(GPIO_TRIGGER, GPIO_ECHO)
             actual_stairs = distance(GPIO_TRIGGER2, GPIO_ECHO2)
             
-            s = threading.Thread(target=countPerson(actual_stairs, stairs_dist, 1), args=(1,))
-            s.start()
+            #await asyncio.gather(
+                #asyncio.to_thread(countPerson(actual_stairs, stairs_dist, 1)),
+                #asyncio.sleep(2)
+            #)
+            #s.start()
+            await countPerson(actual_stairs, stairs_dist, 1)
+            await countPerson(actual_elevator, elevator_dist, 0)
+            #e.start()
             
-            e = threading.Thread(target=countPerson(actual_elevator, elevator_dist, 0), args=(1,))
-            e.start()
-            
-            print(actual_elevator)
-            print(actual_stairs)
-            
-            print(elevator_count)
-            print(stairs_count)
+            print(f"Elevator: {elevator_count}")
+            print(f"Stairs: {stairs_count}")
                 
     except KeyboardInterrupt:
-        print("Measurement stopped by User")
-        GPIO.cleanup()
+            print("Measurement stopped by User")
+            GPIO.cleanup()
+
+if __name__ == '__main__':
+    asyncio.run(
+        main()
+    )
 
